@@ -1,0 +1,8 @@
+{
+    "plugin": {
+        "name": "Bernini-R",
+        "description": "Unified video/image generation and editing with ByteDance Bernini-R 1.3B.",
+        "icon": "/plugins/tongflow-modal-bernini.svg"
+    },
+    "env": []
+}
