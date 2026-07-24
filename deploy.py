@@ -50,6 +50,11 @@ from tongflow.slots import node_slot
 
 # ── model / weights ───────────────────────────────────────────────────────────
 
+# Slots this plugin is the default implementation of: the node picker lists
+# it first and a newly added node preselects it. Read statically by the
+# scanner (never executed), so any SDK version imports this file fine.
+TONGFLOW_DEFAULT_SLOTS = ["video-edit"]
+
 REPO_ID = "ByteDance/Bernini-R-1.3B-Diffusers"
 MODEL_DIR = f"/models/{REPO_ID}"
 
