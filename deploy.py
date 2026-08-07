@@ -141,7 +141,7 @@ with image.imports():
     gpu="A100-80GB",
     volumes={"/models": volume},
     timeout=3600,
-    scaledown_window=5,
+    scaledown_window=2,
 )
 class Inference:
     @modal.enter()
