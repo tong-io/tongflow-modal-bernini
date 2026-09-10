@@ -46,7 +46,70 @@ from tongflow.models.video_image_gen_video_mix import (
 )
 from tongflow.node_slots import NodeSlots
 from tongflow.protocol import asset, asset_as_path
-from tongflow.slots import node_slot
+from tongflow.slots import current_params, node_slot
+
+
+def _adv(name: str, default):
+    """Advanced-section override (``TONGFLOW_SLOT_PARAMS``) or the plugin default."""
+    v = current_params().get(name)
+    if v is None:
+        return default
+    if isinstance(default, bool):
+        return bool(v)
+    if isinstance(default, int):
+        return int(v)
+    if isinstance(default, float):
+        return float(v)
+    return v
+
+# Per-run knobs offered under the node's collapsed "Advanced" section.
+# Pure literal (the platform scanner reads it by AST, never imports this
+# module). Values reach the handlers via current_params(); an untouched
+# control is absent there and falls back to the plugin default.
+TONGFLOW_SLOT_PARAMS = {
+    "image-gen": {
+        "steps": {"type": "integer", "default": 40, "min": 10, "max": 60, "label": "Steps"},
+        "omega_txt": {"type": "number", "default": 4.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Text guidance"},
+        "omega_img": {"type": "number", "default": 4.5, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Image guidance"},
+        "omega_vid": {"type": "number", "default": 1.25, "min": 1.0, "max": 5.0, "step": 0.25, "label": "Video guidance"},
+        "flow_shift": {"type": "number", "default": 5.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Flow shift"},
+    },
+    "image-edit": {
+        "steps": {"type": "integer", "default": 40, "min": 10, "max": 60, "label": "Steps"},
+        "omega_txt": {"type": "number", "default": 4.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Text guidance"},
+        "omega_img": {"type": "number", "default": 4.5, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Image guidance"},
+        "omega_vid": {"type": "number", "default": 1.25, "min": 1.0, "max": 5.0, "step": 0.25, "label": "Video guidance"},
+        "flow_shift": {"type": "number", "default": 5.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Flow shift"},
+    },
+    "text-gen-video": {
+        "steps": {"type": "integer", "default": 40, "min": 10, "max": 60, "label": "Steps"},
+        "omega_txt": {"type": "number", "default": 4.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Text guidance"},
+        "omega_img": {"type": "number", "default": 4.5, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Image guidance"},
+        "omega_vid": {"type": "number", "default": 1.25, "min": 1.0, "max": 5.0, "step": 0.25, "label": "Video guidance"},
+        "flow_shift": {"type": "number", "default": 5.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Flow shift"},
+    },
+    "image-gen-video": {
+        "steps": {"type": "integer", "default": 40, "min": 10, "max": 60, "label": "Steps"},
+        "omega_txt": {"type": "number", "default": 4.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Text guidance"},
+        "omega_img": {"type": "number", "default": 4.5, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Image guidance"},
+        "omega_vid": {"type": "number", "default": 1.25, "min": 1.0, "max": 5.0, "step": 0.25, "label": "Video guidance"},
+        "flow_shift": {"type": "number", "default": 5.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Flow shift"},
+    },
+    "video-image-gen-video-mix": {
+        "steps": {"type": "integer", "default": 40, "min": 10, "max": 60, "label": "Steps"},
+        "omega_txt": {"type": "number", "default": 4.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Text guidance"},
+        "omega_img": {"type": "number", "default": 4.5, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Image guidance"},
+        "omega_vid": {"type": "number", "default": 1.25, "min": 1.0, "max": 5.0, "step": 0.25, "label": "Video guidance"},
+        "flow_shift": {"type": "number", "default": 5.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Flow shift"},
+    },
+    "video-edit": {
+        "steps": {"type": "integer", "default": 40, "min": 10, "max": 60, "label": "Steps"},
+        "omega_txt": {"type": "number", "default": 4.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Text guidance"},
+        "omega_img": {"type": "number", "default": 4.5, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Image guidance"},
+        "omega_vid": {"type": "number", "default": 1.25, "min": 1.0, "max": 5.0, "step": 0.25, "label": "Video guidance"},
+        "flow_shift": {"type": "number", "default": 5.0, "min": 1.0, "max": 10.0, "step": 0.5, "label": "Flow shift"},
+    },
+}
 
 # ── model / weights ───────────────────────────────────────────────────────────
 
@@ -104,7 +167,7 @@ image = (
         extra_index_url="https://download.pytorch.org/whl/cu124",
     )
     .pip_install(
-        "tongflow==0.2.21", "fastapi[standard]",
+        "tongflow==0.3.3", "fastapi[standard]",
         "diffusers==0.35.2",
         "accelerate==0.34.2",
         "transformers==4.57.3",
@@ -208,13 +271,13 @@ class Inference:
                 kwargs: dict = dict(
                     neg_prompt=NEG_PROMPT,
                     num_frames=num_frames,
-                    num_inference_steps=NUM_INFERENCE_STEPS,
+                    num_inference_steps=_adv("steps", NUM_INFERENCE_STEPS),
                     guidance_mode=guidance_mode,
-                    omega_vid=OMEGA_VID,
-                    omega_img=OMEGA_IMG,
-                    omega_txt=OMEGA_TXT,
+                    omega_vid=_adv("omega_vid", OMEGA_VID),
+                    omega_img=_adv("omega_img", OMEGA_IMG),
+                    omega_txt=_adv("omega_txt", OMEGA_TXT),
                     omega_scale=OMEGA_SCALE,
-                    flow_shift=FLOW_SHIFT,
+                    flow_shift=_adv("flow_shift", FLOW_SHIFT),
                     seed=seed,
                     fps=FPS,
                     video=video_path,
