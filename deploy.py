@@ -167,7 +167,7 @@ image = (
         extra_index_url="https://download.pytorch.org/whl/cu124",
     )
     .pip_install(
-        "tongflow==0.3.3", "fastapi[standard]",
+        "tongflow==1.0.0", "fastapi[standard]",
         "diffusers==0.35.2",
         "accelerate==0.34.2",
         "transformers==4.57.3",
